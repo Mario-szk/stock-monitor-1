@@ -14,7 +14,7 @@ import com.ccmm.stock.stock_monitor_announcement.mysql.AnnounceInfoMySQLTools;
  * @author cc
  *
  */
-public class AnnouncementParserTools {
+public class SZAnnouncementParserTools {
 
 	public String announcementContent=""; //公告的内容
 
@@ -31,19 +31,15 @@ public class AnnouncementParserTools {
 			//1.获得证券代码的内容片段
 			int start=0;
 			int end=announcementContent.length();
+			String content = announcementContent;
 			try{
-				String content = announcementContent.replaceAll("\r\n", "");
+				content = announcementContent.replaceAll("\r\n", "");
 				content=content.replaceAll(" ", "");
-				int index = content.indexOf("权益分派实施公告");
-				if(index>0 && index<end){
-					end=index;
-				}else{
-					return "";
-				}
+				
 			}catch(Exception e){}
 			
-			String contentSeg=announcementContent.substring(start, end);
-			
+			String contentSeg=content;
+			contentSeg=contentSeg.replace("\n", "");
 			
 			//2.正则表达式解析code
 			Pattern p=Pattern.compile("证券代码[:：]\\d{6}"); 
@@ -72,6 +68,16 @@ public class AnnouncementParserTools {
 						code=code.replaceAll(":", "");
 						code=code.replaceAll("：", "");
 						
+					}else{
+						
+						p=Pattern.compile("证券号码[:：]\\d{6}"); 
+						m=p.matcher(contentSeg); 
+						if(m.find()){
+							code=m.group();
+							code=code.replaceAll("证券号码", "");
+							code=code.replaceAll(":", "");
+							code=code.replaceAll("：", "");
+						}
 					}
 				}
 			}
@@ -92,8 +98,10 @@ public class AnnouncementParserTools {
 			//1.获得证券代码的内容片段
 			int start=0;
 			int end=announcementContent.length();
+			String content=announcementContent;
 			try{
-				String content = announcementContent.replaceAll("\r\n", "");
+				content = announcementContent.replaceAll("\r\n", "");
+				
 				content=content.replaceAll(" ", "");
 				int index = content.indexOf("权益分派实施公告");
 				if(index>0 && index<end){
@@ -103,8 +111,8 @@ public class AnnouncementParserTools {
 				}
 			}catch(Exception e){}
 			
-			String contentSeg=announcementContent.substring(start, end);
-			
+			String contentSeg=content.substring(start, end);
+			contentSeg=contentSeg.replace("\n", "");
 			
 			//2.正则表达式解析code
 			Pattern p=Pattern.compile("证券简称[:：][a-zA-Z0-9_\u4e00-\u9fa5]{3,4}"); 
@@ -149,36 +157,24 @@ public class AnnouncementParserTools {
 		if(announcementContent!=null && !announcementContent.isEmpty()){
 			//System.out.println(announcementContent);
 			
-			//1.获得现金分红的内容片段
-			int start=0;
-			int end=announcementContent.length();
-			try{
-				int index = announcementContent.indexOf("每股分配比例");
-				if(index>0 && index>start){
-					start=index;
-				}else{
-					return "";
-				}
-				index = announcementContent.indexOf("相关日期");
-				if(index>0 && index<end){
-					end=index;
-				}else{
-					return "";
-				}
-				
-			}catch(Exception e){}
-			
-			String contentSeg=announcementContent.substring(start, end);
+			String contentSeg=announcementContent;
 			//System.out.println(contentSeg);
 			contentSeg=contentSeg.replace(" ", "");
-			//A股每股现金红利0.04元
+			contentSeg=contentSeg.replace("\r\n", "");
+			contentSeg=contentSeg.replace("\n", "");
+			//向全体股东每10股派2.00元人民币现金
 			//2.正则表达式解析code
-			Pattern p=Pattern.compile("A股每股现金红利([0-9]\\d*\\.?\\d*)|(0\\.\\d*[0-9])元"); 
+			Pattern p=Pattern.compile("(向全体股东每10股派([0-9]\\d*\\.?\\d*)|(0\\.\\d*[0-9])元)"); 
 			Matcher m=p.matcher(contentSeg); 
 			if(m.find()){
 				money=m.group();
-				money=money.replaceAll("A股每股现金红利", "");
+				//System.out.println(m.group(0));
+				//System.out.println(m.group(1));
+				money=money.replaceAll("向全体股东每10股派", "");
 				money=money.replaceAll("元", "");
+				double moneyDouble = Double.parseDouble(money);
+				moneyDouble=moneyDouble/10;
+				money=moneyDouble+"";
 			}
 		}
 		return money;
@@ -200,63 +196,19 @@ public class AnnouncementParserTools {
 		String date="";
 		if(announcementContent!=null && !announcementContent.isEmpty()){
 			//System.out.println(announcementContent);
-			
-			//1.获得现金分红的内容片段
-			int start=0;
-			int end=announcementContent.length();
-			try{
-				int index = announcementContent.indexOf("相关日期");
-				if(index>0 && index>start){
-					start=index+6;
-				}else{
-					return "";
-				}
-				index = announcementContent.indexOf("一、");
-				if(index>0 && index<end){
-					end=index;
-				}else{
-					return "";
-				}
-				
-			}catch(Exception e){}
-			
-			String contentSeg=announcementContent.substring(start, end);
-			//System.out.println(contentSeg);
-			
-			
-			int index = contentSeg.indexOf("A股");
-			if(index==-1){
-				index = contentSeg.indexOf("Ａ股");
-			}
-			//List<String> contentList = new LinkedList<String>();
-			String Beforecontent = contentSeg.substring(0,index-2);
-			String afterContent = contentSeg.substring(index-2);
-			Beforecontent=Beforecontent.replace("\r\n", "");
-			contentSeg=Beforecontent+afterContent;
-			String contentList[] = contentSeg.split("\n");
-			int i=0;int flagIndex=-1;
-			for(String str:contentList){
-				//System.out.println(i+"\t"+str);
-				if(str.contains("股权登记日")){
-					flagIndex=i;break;
-				}
-				i++;
-			}
-			
-			if(flagIndex>=0&&flagIndex<contentList.length-1){
-				String flagStr = contentList[flagIndex];
-				String dataStr = contentList[flagIndex+1];
-				
-				String ss[] = flagStr.split(" ");
-				String ss1[] = dataStr.split(" ");
-				int j=0;
-				for(String s:ss){
-					if(s.equals("股权登记日")){
-						date=ss1[j];
-					}
-					j++;
-				}
-				//System.out.println(ss[1]);
+			String contentSeg=announcementContent.replace(" ", "");
+			contentSeg=contentSeg.replace("\r\n", "");
+			contentSeg=contentSeg.replace("\n", "");
+			Pattern p=Pattern.compile("股权登记日(为)：\\d{4}(年)\\d{1,2}(月)\\d{1,2}日"); 
+			Matcher m=p.matcher(contentSeg); 
+			if(m.find()){
+				date=m.group();
+				date=date.replaceAll("股权登记日", "");
+				date=date.replaceAll("为", "");
+				date=date.replaceAll("：", "");
+				date=date.replaceAll("年", "-");
+				date=date.replaceAll("月", "-");
+				date=date.replaceAll("日", "");
 			}
 		}
 		return date;
@@ -270,62 +222,19 @@ public class AnnouncementParserTools {
 		String date="";
 		if(announcementContent!=null && !announcementContent.isEmpty()){
 			//System.out.println(announcementContent);
-			
-			//1.获得现金分红的内容片段
-			int start=0;
-			int end=announcementContent.length();
-			try{
-				int index = announcementContent.indexOf("相关日期");
-				if(index>0 && index>start){
-					start=index+6;
-				}else{
-					return "";
-				}
-				index = announcementContent.indexOf("一、");
-				if(index>0 && index<end){
-					end=index;
-				}else{
-					return "";
-				}
-				
-			}catch(Exception e){}
-			
-			String contentSeg=announcementContent.substring(start, end);
-			//System.out.println(contentSeg);
-			
-			int index = contentSeg.indexOf("A股");
-			if(index==-1){
-				index = contentSeg.indexOf("Ａ股");
-			}
-			//List<String> contentList = new LinkedList<String>();
-			String Beforecontent = contentSeg.substring(0,index-2);
-			String afterContent = contentSeg.substring(index-2);
-			Beforecontent=Beforecontent.replace("\r\n", "");
-			contentSeg=Beforecontent+afterContent;
-			String contentList[] = contentSeg.split("\n");
-			int i=0;int flagIndex=-1;
-			for(String str:contentList){
-				//System.out.println(i+"\t"+str);
-				if(str.contains("除权（息）日")){
-					flagIndex=i;break;
-				}
-				i++;
-			}
-			
-			if(flagIndex>=0&&flagIndex<contentList.length-1){
-				String flagStr = contentList[flagIndex];
-				String dataStr = contentList[flagIndex+1];
-				
-				String ss[] = flagStr.split(" ");
-				String ss1[] = dataStr.split(" ");
-				int j=0;
-				for(String s:ss){
-					if(s.equals("除权（息）日")){
-						date=ss1[j];
-					}
-					j++;
-				}
-				//System.out.println(ss[1]);
+			String contentSeg=announcementContent.replace(" ", "");
+			contentSeg=contentSeg.replace("\r\n", "");
+			contentSeg=contentSeg.replace("\n", "");
+			Pattern p=Pattern.compile("除权除息日(为)：\\d{4}(年)\\d{1,2}(月)\\d{1,2}日"); 
+			Matcher m=p.matcher(contentSeg); 
+			if(m.find()){
+				date=m.group();
+				date=date.replaceAll("除权除息日", "");
+				date=date.replaceAll("为", "");
+				date=date.replaceAll("：", "");
+				date=date.replaceAll("年", "-");
+				date=date.replaceAll("月", "-");
+				date=date.replaceAll("日", "");
 			}
 		}
 		return date;
@@ -339,62 +248,19 @@ public class AnnouncementParserTools {
 		String date="";
 		if(announcementContent!=null && !announcementContent.isEmpty()){
 			//System.out.println(announcementContent);
-			
-			//1.获得现金分红的内容片段
-			int start=0;
-			int end=announcementContent.length();
-			try{
-				int index = announcementContent.indexOf("相关日期");
-				if(index>0 && index>start){
-					start=index+6;
-				}else{
-					return "";
-				}
-				index = announcementContent.indexOf("一、");
-				if(index>0 && index<end){
-					end=index;
-				}else{
-					return "";
-				}
-				
-			}catch(Exception e){}
-			
-			String contentSeg=announcementContent.substring(start, end);
-			//System.out.println(contentSeg);
-			
-			int index = contentSeg.indexOf("A股");
-			if(index==-1){
-				index = contentSeg.indexOf("Ａ股");
-			}
-			//List<String> contentList = new LinkedList<String>();
-			String Beforecontent = contentSeg.substring(0,index-2);
-			String afterContent = contentSeg.substring(index-2);
-			Beforecontent=Beforecontent.replace("\r\n", "");
-			contentSeg=Beforecontent+afterContent;
-			String contentList[] = contentSeg.split("\n");
-			int i=0;int flagIndex=-1;
-			for(String str:contentList){
-				//System.out.println(i+"\t"+str);
-				if(str.contains("现金红利发放日")){
-					flagIndex=i;break;
-				}
-				i++;
-			}
-			
-			if(flagIndex>=0&&flagIndex<contentList.length-1){
-				String flagStr = contentList[flagIndex];
-				String dataStr = contentList[flagIndex+1];
-				
-				String ss[] = flagStr.split(" ");
-				String ss1[] = dataStr.split(" ");
-				int j=0;
-				for(String s:ss){
-					if(s.equals("现金红利发放日")){
-						date=ss1[j];
-					}
-					j++;
-				}
-				//System.out.println(ss[1]);
+			String contentSeg=announcementContent.replace(" ", "");
+			contentSeg=contentSeg.replace("\r\n", "");
+			contentSeg=contentSeg.replace("\n", "");
+			Pattern p=Pattern.compile("红利发放日(为)：\\d{4}(年)\\d{1,2}(月)\\d{1,2}日"); 
+			Matcher m=p.matcher(contentSeg); 
+			if(m.find()){
+				date=m.group();
+				date=date.replaceAll("红利发放日", "");
+				date=date.replaceAll("为", "");
+				date=date.replaceAll("：", "");
+				date=date.replaceAll("年", "-");
+				date=date.replaceAll("月", "-");
+				date=date.replaceAll("日", "");
 			}
 		}
 		return date;
@@ -407,7 +273,7 @@ public class AnnouncementParserTools {
 	public static StockAnnounceInfo  parserInfo(String announce){
 		StockAnnounceInfo info = new StockAnnounceInfo();
 		
-		AnnouncementParserTools tools = new AnnouncementParserTools();
+		SZAnnouncementParserTools tools = new SZAnnouncementParserTools();
 		tools.setAnnouncementContent(announce);
 		
 		
@@ -423,7 +289,7 @@ public class AnnouncementParserTools {
 		info.setDividendsMoney(str);
 
 		str =tools.parserStockGiveMoneyDate();
-		info.setGiveMoneyDate(str);
+		info.setGiveMoneyDate(str.isEmpty()?info.getDiveDate():str);
 		
 		str=tools.parserStockRegisterDate();
 		info.setRegisterDate(str);
@@ -433,6 +299,15 @@ public class AnnouncementParserTools {
 			double closePrice=data.getClose();
 			info.setStockMoney(closePrice+"");
 			info.setStockDate(data.getDate());
+			
+			double mon = Double.parseDouble(info.getStockMoney());
+			if (Double.compare(mon, new Double(0.0)) == 0) {
+				double Rate=new Double(0.0);
+				info.setDividendRate("0");
+				return info;
+			}else{
+				
+			}
 			
 			double Rate=(Double.parseDouble(info.getDividendsMoney()))/(Double.parseDouble(info.getStockMoney()));
 			info.setDividendRate((int)(Rate*100*100)+"");
@@ -472,7 +347,7 @@ public class AnnouncementParserTools {
 		          //这里将列出所有的文件夹
 		      } else {
 		         //这里将列出所有的文件
-		    	  if(f.getAbsolutePath().endsWith(".pdf") || f.getAbsolutePath().endsWith(".PDF"))
+		    	  if(f.getAbsolutePath().endsWith(".PDF"))
 		    		  listFile.add(f.getAbsolutePath());
 		      }
 		  }
@@ -480,14 +355,18 @@ public class AnnouncementParserTools {
 		}
 	public static void main(String argvs[]){
 		String path1=argvs[1];
-		//String path1="C:\\Users\\cc\\Desktop\\result";
+		//String path1="C:\\Users\\cc\\Desktop\\pdfResult";
 		PdfboxUtil pdfutil = new PdfboxUtil();
 		List<String> path = getDirectory(new File(path1));
 		for(String pdfPath:path){
 			try {
-				StockAnnounceInfo info = AnnouncementParserTools.parserInfo(pdfutil.getTextFromPdf(pdfPath));
-				AnnounceInfoMySQLTools.saveInfoToMysql(info);
+				StockAnnounceInfo info = SZAnnouncementParserTools.parserInfo(pdfutil.getTextFromPdf(pdfPath));
+				//StockAnnounceInfo info = SZAnnouncementParserTools.parserInfo(pdfutil.getTextFromPdf("C://Users//cc//Desktop//1203624859.PDF"));
+				System.out.println(pdfPath);
 				System.out.println(info);
+				System.out.println();
+				AnnounceInfoMySQLTools.saveInfoToMysql(info);
+				
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				System.out.println(pdfPath);

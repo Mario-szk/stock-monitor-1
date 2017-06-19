@@ -49,7 +49,7 @@ public class AnnounceInfoMySQLTools {
 		updataSql_2+=("'"+info.getStockMoney()+"',");
 		
 		updataSql_1+="dividendRate,";
-		if(info.getDividendRate()==null || info.getDividendRate().isEmpty()){info.setDividendRate(""+0);}
+		if(info.getDividendRate()==null || info.getDividendRate().isEmpty()|| info.getStockMoney().equals("0.0")){info.setDividendRate(""+1);}
 		updataSql_2+=(""+info.getDividendRate()+",");
 		
 		updataSql_1=updataSql_1.substring(0,updataSql_1.length()-1);
@@ -100,7 +100,7 @@ public class AnnounceInfoMySQLTools {
 		updataSql_2+=("'"+info.getStockMoney()+"',");
 		
 		updataSql_1+="dividendRate,";
-		if(info.getDividendRate()==null || info.getDividendRate().isEmpty()){info.setDividendRate(""+0);}
+		if(info.getDividendRate()==null || info.getDividendRate().isEmpty()|| info.getDividendRate().equals("0")){info.setDividendRate(""+0);}
 		updataSql_2+=(""+info.getDividendRate()+",");
 		
 		updataSql_1=updataSql_1.substring(0,updataSql_1.length()-1);
@@ -117,9 +117,9 @@ public class AnnounceInfoMySQLTools {
 	 */
 	public static List<StockAnnounceInfo> selectTop10InfoFromMysql(String date){
 		updateMysql(date);
-		
+		//SELECT *,count(DISTINCT code) FROM StockAnnounceInfo where registerDate>'2017-06-12' group by code ORDER BY dividendRate DESC LIMIT 10
 		List<StockAnnounceInfo> list = new LinkedList<StockAnnounceInfo>();
-		String sql ="SELECT * FROM StockAnnounceInfo where registerDate>'"+date+"' ORDER BY dividendRate DESC LIMIT 10";
+		String sql ="SELECT * ,count(DISTINCT code) FROM StockAnnounceInfo where registerDate>'"+date+"' group by code ORDER BY dividendRate DESC LIMIT 10";
 		mysql.ExecuteQuery("stock_data_1", sql, new CCMySQL.QueryHandler() {
 			
 			@Override
@@ -222,8 +222,14 @@ public class AnnounceInfoMySQLTools {
 				info.setStockMoney(closePrice+"");
 				info.setStockDate(data.getDate());
 				
-				double Rate=(Double.parseDouble(info.getDividendsMoney()))/(Double.parseDouble(info.getStockMoney()));
-				info.setDividendRate((int)(Rate*100*100)+"");
+				
+				double mon = Double.parseDouble(info.getStockMoney());
+				if (Double.compare(mon, new Double(0.0)) == 0) {
+					info.setDividendRate("0");
+				}else{
+					double Rate=(Double.parseDouble(info.getDividendsMoney()))/(Double.parseDouble(info.getStockMoney()));
+					info.setDividendRate((int)(Rate*100*100)+"");
+				}
 			}catch(Exception e){}	
 		}
 		//3.保存到mysql中

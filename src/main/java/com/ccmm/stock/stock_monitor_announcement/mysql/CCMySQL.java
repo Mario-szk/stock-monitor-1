@@ -21,7 +21,8 @@ public class CCMySQL {
 
 
     public CCMySQL(){
-    	set("10.28.86.78","3306","root","root");
+    	//set("10.28.86.78","3306","root","root");
+    	set("139.129.230.162","3306","root","root");
     }
 	public  interface QueryHandler{
 		void handler(ResultSet resultSet);

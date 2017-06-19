@@ -1,6 +1,8 @@
 package com.ccmm.stock.stock_monitor_announcement;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.List;
 import com.ccmm.stock.stock_monitor_announcement.email.JavaMailWithAttachment;
 import com.ccmm.stock.stock_monitor_announcement.mysql.AnnounceInfoMySQLTools;
 import com.ccmm.stock.stock_monitor_announcement.pdf.AnnouncementParserTools;
+import com.ccmm.stock.stock_monitor_announcement.pdf.SZAnnouncementParserTools;
 import com.ccmm.stock.stock_monitor_announcement.pdf.StockAnnounceInfo;
 
 public class Main {
@@ -20,18 +23,58 @@ public class Main {
         return temp_str;  
     } 
     
+    public static void removeDir(String path){
+    	 try {  
+    		 String command="rm -rf "+path+"/*";
+             Process ps = Runtime.getRuntime().exec(command);  
+             ps.waitFor(); 
+             
+             BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));  
+             StringBuffer sb = new StringBuffer();  
+             String line;  
+             while ((line = br.readLine()) != null) {  
+                 sb.append(line).append("\n");  
+             }  
+             String result = sb.toString();  
+             System.out.println(result);  
+                         
+             System.out.println(command);
+             }   
+         catch (Exception e) {  
+             e.printStackTrace();  
+             }  
+     }  
+    
+    
     /**
      * 
      * @param args [0]--firefox bin path  [1]--pdf result path  [2]--endDate
      */
 	public static void main(String [] args){
-		//1.爬网页
+		
+//		String firefoxBinPath="C:\\Program Files (x86)\\Mozilla Firefox_v28\\firefox.exe";
+//		String filePath="C:\\Users\\cc\\Desktop\\pdfResult";
+//		String endDate="20170525";
+//		String args111[] = {firefoxBinPath,filePath,endDate};
+//		args=args111;
+		//1.上海证券爬网页
 		SSAnnouncementProcessor.main(args);
-		System.out.println("爬网页结束");
+		System.out.println("【上海证券】爬网页结束");
 		//2.解析pdf保存到mysql
-		args[0]=args[1];
+
 		AnnouncementParserTools.main(args);
-		System.out.println("解析pdf结束");
+		System.out.println("【上海证券】解析pdf结束");
+		
+		//removeDir(args[1]);
+		
+		//1.
+		SZAnnouncementProcessor.main(args);
+		System.out.println("【深圳证券】爬网页结束");
+		
+		//2.
+		SZAnnouncementParserTools.main(args);
+		System.out.println("【深圳证券】解析pdf结束");
+		
 		//3.读mysql
 		String date = GetNowDate();
 		List<StockAnnounceInfo> list = AnnounceInfoMySQLTools.selectTop10InfoFromMysql(date);

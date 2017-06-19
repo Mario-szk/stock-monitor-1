@@ -239,7 +239,7 @@ public class JavaMailWithAttachment {
         String contentPath=pps.getProperty("content");
         content=readToString(new File(contentPath),"utf-8");
         content=content.replace("\n", "<br>");
-        content=content.replace("\t", "<pre>");
+        content=content.replace("\t", "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp");
         //6. 发邮件
         JavaMailWithAttachment se = new JavaMailWithAttachment(true);
         se.doSendHtmlEmail(title, content,receiveUsers ,ccUsers, affixs);
